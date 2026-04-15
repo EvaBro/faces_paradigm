@@ -50,7 +50,7 @@ end_duration = 2 # duration of the final message in s
 # File paths
 faces_folder = "./Faces_original/"
 scrambled_folder = './Faces_scrambled/'
-target_image = './Target_images/astronaut.png'
+target_folder = './Target_images/'
 instruction = './Instructions/Instruction_black.png'
 
 # Triggers
@@ -72,6 +72,7 @@ screen_idx=0 # Should be 0 for stim PC
 init_nontargets = 3 # How many nontarget trials come at the start
 
 # Image sizes
+target_size = 506
 
 #%% Logistics
 
@@ -87,7 +88,7 @@ num_image_frames = np.round(stimulus_duration*framerate).astype(int)
 # Get images
 face_files = utils.create_img_list(faces_folder)
 scrambled_files = utils.create_img_list(scrambled_folder)
-target_files = [target_image]*num_targets
+target_files = utils.create_img_list(target_folder)
 
 #%% Set up window and hardware
 
@@ -132,7 +133,7 @@ window.flip()
 trial_list = face_files + scrambled_files + target_files
 np.random.shuffle(trial_list)
 
-is_target = [1 if img == target_image else 0 for img in trial_list]
+is_target = [1 if 'bird' in img else 0 for img in trial_list]
 is_scrambled = [1 if '_scrambled' in img else 0 for img in trial_list]
 is_happy = [1 if ('_HA_' in img) and ('scrambled' not in img) else 0 for img in trial_list]
 is_angry = [1 if ('_AN_' in img) and ('scrambled' not in img) else 0 for img in trial_list]
@@ -143,8 +144,12 @@ trigger_list[np.array(is_scrambled).astype(bool)] = PortCodes.scrambled_face
 trigger_list[np.array(is_happy).astype(bool)]     = PortCodes.happy_face
 trigger_list[np.array(is_angry).astype(bool)]     = PortCodes.angry_face
 
-# Create empty stim object - will fill it up during the loop
+# Create stim objects
 stim = [visual.ImageStim(window, pos=(0,0), image=i) for i in trial_list]
+for s in range(num_trials):
+    if is_target[s]:
+        stim[s].size = target_size
+
 
 #%% Wait until ready
 event.clearEvents() # Clear the keyboard events buffer to make sure previous button presses are ignored
