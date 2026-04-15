@@ -17,12 +17,16 @@ Controls:
 
 """
 
-import FacesUtils as utils
 import numpy as np
 from enum import IntFlag
-from ParallelButtonBox import ButtonBox
 from psychopy import visual, event, core
 import os
+import sys
+
+sys.path.append(r'C:\Experiments\TaylorLab\python_utils') 
+from ParallelButtonBox import ButtonBox
+import OptitrackUtils as opti
+import ExperimentUtils as utils
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) 
 
@@ -82,7 +86,7 @@ face_files = utils.create_img_list(faces_folder)
 scrambled_files = utils.create_img_list(scrambled_folder)
 target_files = [target_image]*num_targets
 
-#%% Set up window and button box
+#%% Set up window and hardware
 
 # Create buttonbox    
 btn_box = ButtonBox(address=0xdff8)
@@ -91,6 +95,8 @@ btn_box = ButtonBox(address=0xdff8)
 win_size = utils.get_window_size(screen_idx) 
 window = utils.create_window(win_size, screen_idx)
 
+# Set up Optitrack
+client = opti.setup()
 
 #%% Create screens
 intro_screen = visual.ImageStim(window, pos=(0,0), image=instruction, size=win_size)
@@ -127,9 +133,14 @@ is_scrambled = [1 if '_scrambled' in img else 0 for img in trial_list]
 is_happy = [1 if ('_HA_' in img) and ('scrambled' not in img) else 0 for img in trial_list]
 is_angry = [1 if ('_AN_' in img) and ('scrambled' not in img) else 0 for img in trial_list]
 
+trigger_list = np.zeros(num_trials, dtype=int)
+trigger_list[np.array(is_target).astype(bool)]    = PortCodes.target_image
+trigger_list[np.array(is_scrambled).astype(bool)] = PortCodes.scrambled_face
+trigger_list[np.array(is_happy).astype(bool)]     = PortCodes.happy_face
+trigger_list[np.array(is_angry).astype(bool)]     = PortCodes.angry_face
+
 # Create empty stim object - will fill it up during the loop
 stim = [visual.ImageStim(window, pos=(0,0), image=i) for i in trial_list]
-
 
 #%% Wait until ready
 event.clearEvents() # Clear the keyboard events buffer to make sure previous button presses are ignored
@@ -143,7 +154,11 @@ while not ready:
         core.quit()
     if 'space' in keys:
         ready = True
+        
+# Start Optitrack
+opti.start_recording(client)
 
+# Present get ready screens
 ready_screen.draw()
 window.flip()
 core.wait(ready_duration/3)
@@ -168,20 +183,11 @@ window.setRecordFrameIntervals(True) # Enable frame timing diagnostics
 for trial_idx in range(num_trials):
     
     # Present stimulus
-    if is_target[trial_idx]:
-        window.callOnFlip(utils.send_trigger, PortCodes.target_image)
-    elif is_scrambled[trial_idx]:
-        window.callOnFlip(utils.send_trigger, PortCodes.scrambled_face)
-    elif is_happy[trial_idx]:
-        window.callOnFlip(utils.send_trigger, PortCodes.happy_face)
-    elif is_angry[trial_idx]: 
-        window.callOnFlip(utils.send_trigger, PortCodes.angry_face)
-
+    window.callOnFlip(utils.send_trigger, PortCodes(int(trigger_list[trial_idx])))
     for frame_idx in range(num_image_frames):
         stim[trial_idx].draw()
         window.flip()
         prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time)
-
         
     # Present fixation
     for frame_idx in range(num_fixation_frames[trial_idx]):
