@@ -51,7 +51,7 @@ end_duration = 2 # duration of the final message in s
 faces_folder = "./Faces_original/"
 scrambled_folder = './Faces_scrambled/'
 target_folder = './Target_images/'
-instruction = './Instructions/Instruction_black.png'
+instruction = './Instructions/Instruction_Faces.png'
 
 # Triggers
 class PortCodes(IntFlag):
