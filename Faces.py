@@ -6,7 +6,10 @@ Created on Mon Apr 13 12:10:46 2026
 
 Faces paradigm. 
 Trials consist of happy and angry faces and corresponding scrambled faces which serve as control stimuli. 
-Participants are instructed to press the red button if they see ... ? 
+Participants are instructed to press the red button if they see a bird. 
+
+Optitrack is triggered automatically once the experiment starts, and it stops automatically when the experiment ends. 
+The take name is also set automatically, with the datetime at the end so existing takes cannot be overwritten. 
 
 Controls:
     - red button:   button press (linked to trigger)
@@ -97,6 +100,7 @@ window = utils.create_window(win_size, screen_idx)
 
 # Set up Optitrack
 client = opti.setup()
+opti.set_take_name(client, 'Faces')
 
 #%% Create screens
 intro_screen = visual.ImageStim(window, pos=(0,0), image=instruction, size=win_size)
@@ -187,19 +191,21 @@ for trial_idx in range(num_trials):
     for frame_idx in range(num_image_frames):
         stim[trial_idx].draw()
         window.flip()
-        prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time)
+        prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time, client)
         
     # Present fixation
     for frame_idx in range(num_fixation_frames[trial_idx]):
         fixation.draw()
         window.flip()
-        prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time)
+        prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time, client)
     
     
 # Draw end screen
 end_screen.draw()
 window.flip()
 core.wait(end_duration)
+
+opti.stop_recording(client)
 
 window.close()
 core.quit()
