@@ -13,12 +13,12 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
 # --- Parameters ---
-input_folder = r'C:\Experiments\TaylorLab\Faces\Faces_original'
-output_folder = r'C:\Experiments\TaylorLab\Faces\Faces_scrambled'
+input_folder = r'C:\Experiments\TaylorLab\FacesNormalAndScrambled\Faces_original'
+output_folder = r'C:\Experiments\TaylorLab\FacesNormalAndScrambled\Faces_scrambled'
 
 GRID_SIZE = 8          # 8x8 grid
 MOSAIC_CELL_SIZE = 15  # pixels
-BLUR_RADIUS = 10       # pixels
+BLUR_RADIUS = 5       # pixels
 
 os.makedirs(output_folder, exist_ok=True)
 
