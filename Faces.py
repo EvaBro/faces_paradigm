@@ -28,6 +28,8 @@ from enum import IntFlag
 from psychopy import visual, event, core
 import os
 import sys
+import pandas as pd
+from datetime import datetime
 
 sys.path.append(r'C:\Experiments\TaylorLab\python_utils') 
 from ParallelButtonBox import ButtonBox
@@ -35,6 +37,8 @@ import OptitrackUtils as opti
 import ExperimentUtils as utils
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) 
+
+print('>>> Starting Faces paradigm')
 
 #%% Parameters
 
@@ -55,6 +59,7 @@ faces_folder = "./Faces_original/"
 scrambled_folder = './Faces_scrambled/'
 target_folder = './Target_images/'
 instruction = './Instructions/Instruction_Faces.png'
+log_folder = r'C:\Experiments\TaylorLab\OPM07 - UKRI\logs'
 
 # Triggers
 class PortCodes(IntFlag):
@@ -76,7 +81,7 @@ init_nontargets = 3 # How many nontarget trials come at the start
 
 # Image sizes
 target_size = 506
-
+    
 #%% Logistics
 
 # Apply jitter to isi interval
@@ -152,6 +157,21 @@ for s in range(num_trials):
     if is_target[s]:
         stim[s].size = target_size
 
+#%% Logging
+log_df = pd.DataFrame({'trial_image': trial_list})
+log_df['trigger'] = np.log2(trigger_list) + 1
+log_df['is_happy'] = is_happy
+log_df['is_angry'] = is_angry
+log_df['is_scrambled'] = is_scrambled
+log_df['is_target'] = is_target
+log_df['trial_completed'] = False
+log_df['dropped_frames'] = 0
+
+def save_data(): # This is not pretty, but it works
+    now = datetime.now()
+    save_folder = log_folder + '\\' + now.strftime("%Y%m%d")
+    os.makedirs(save_folder, exist_ok=True)
+    log_df.to_csv(save_folder + '\\Faces_' + now.strftime("%Y-%m-%d_%H-%M-%S") + '.csv', index=False)
 
 #%% Wait until ready
 event.clearEvents() # Clear the keyboard events buffer to make sure previous button presses are ignored
@@ -199,15 +219,22 @@ for trial_idx in range(num_trials):
     for frame_idx in range(num_image_frames):
         stim[trial_idx].draw()
         window.flip()
-        prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time, client)
+        prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time, client, save_function=save_data)
         
     # Present fixation
     for frame_idx in range(num_fixation_frames[trial_idx]):
         fixation.draw()
         window.flip()
-        prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time, client)
+        prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time, client, save_function=save_data)
     
-    
+    log_df.loc[trial_idx, 'trial_completed'] = True
+    log_df.loc[trial_idx, 'dropped_frames'] = window.nDroppedFrames
+
+
+
+# Save log
+save_data()
+
 # Draw end screen
 end_screen.draw()
 window.flip()
