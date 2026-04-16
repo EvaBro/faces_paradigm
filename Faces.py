@@ -20,6 +20,9 @@ Controls:
 
 """
 
+# TODO: fix instruction slide resolution
+
+
 import numpy as np
 from enum import IntFlag
 from psychopy import visual, event, core
@@ -101,7 +104,6 @@ window = utils.create_window(win_size, screen_idx)
 
 # Set up Optitrack
 client = opti.setup()
-opti.set_take_name(client, 'Faces')
 
 #%% Create screens
 intro_screen = visual.ImageStim(window, pos=(0,0), image=instruction, size=win_size)
@@ -165,6 +167,7 @@ while not ready:
         ready = True
         
 # Start Optitrack
+opti.set_take_name(client, 'Faces')
 opti.start_recording(client)
 
 # Present get ready screens
