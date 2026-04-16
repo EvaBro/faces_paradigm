@@ -165,7 +165,6 @@ log_df['is_angry'] = is_angry
 log_df['is_scrambled'] = is_scrambled
 log_df['is_target'] = is_target
 log_df['trial_completed'] = False
-log_df['dropped_frames'] = 0
 
 def save_data(): # This is not pretty, but it works
     now = datetime.now()
@@ -211,6 +210,7 @@ buttonClock = core.Clock()
 prev_button_state = False
 prev_button_time = float('-inf')
 window.setRecordFrameIntervals(True) # Enable frame timing diagnostics
+drops_before = 0
 
 for trial_idx in range(num_trials):
     
@@ -220,7 +220,10 @@ for trial_idx in range(num_trials):
         stim[trial_idx].draw()
         window.flip()
         prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time, client, save_function=save_data)
-        
+    
+    log_df.loc[trial_idx, 'dropped_frames_stim'] = window.nDroppedFrames - drops_before
+    drops_before = window.nDroppedFrames
+    
     # Present fixation
     for frame_idx in range(num_fixation_frames[trial_idx]):
         fixation.draw()
@@ -228,7 +231,8 @@ for trial_idx in range(num_trials):
         prev_button_state, prev_button_time = utils.check_keys(window, PortCodes, buttonClock, prev_button_state, prev_button_time, client, save_function=save_data)
     
     log_df.loc[trial_idx, 'trial_completed'] = True
-    log_df.loc[trial_idx, 'dropped_frames'] = window.nDroppedFrames
+    log_df.loc[trial_idx, 'dropped_frames_fix'] = window.nDroppedFrames - drops_before
+    drops_before = window.nDroppedFrames
 
 
 
