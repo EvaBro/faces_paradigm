@@ -17,11 +17,16 @@ Controls:
     - Escape:       quits the experiment completely. Also works while paused
     - p:            pauses the experiment
     - r:            resumes the experiment after pause
-
+    
+Outputs: 
+    - A log file will be written to a folder of your choice. The log file 
+      contains the exact file names of the images that were presented, as well 
+      as the number of frame drops that occurred during each trial, if any. 
+      E.g. having a browser window open with some graphics playing in the 
+      background will dramatically affect timing.
+    - (Optional) Optitrack recording, starts and stops automatically. 
+      If you want this functionality, make sure the Motive software is running and set up 
 """
-
-# TODO: fix instruction slide resolution
-
 
 import numpy as np
 from enum import IntFlag
@@ -31,28 +36,16 @@ import sys
 import pandas as pd
 from datetime import datetime
 
-sys.path.append(r'C:\Experiments\TaylorLab\python_utils') 
-from ParallelButtonBox import ButtonBox
+sys.path.append(r'C:\Experiments\TaylorLab\stim_utils') # Change folder name as needed
 import OptitrackUtils as opti
 import ExperimentUtils as utils
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) 
 
-print('>>> Starting Faces paradigm')
 
-#%% Parameters
+#%% System-dependent parameters - change these as needed
 
-# Timing parameters
-num_faces = 80 # number of face images
-num_scrambled = 80 # same number of scrambled faces
-num_targets = 30 # number of target images
-stimulus_duration = 0.5 # duration of face presentation s
-fixation_duration = 1.25 # average duration of fixation
-max_jitter = 0.2; # jitter duration in s, effective fixation duration will be between [fixation_duration - max_jitter, fixation_duration + max_jitter]
-framerate = 60; # Hz, System-dependent
-ready_duration = 3 # duration of ready set go sequence
-end_duration = 2 # duration of the final message in s
-
+# Do not forget to set up triggers and button box in the ExperimentUtils module
 
 # File paths
 faces_folder = "./Faces_original/"
@@ -60,6 +53,8 @@ scrambled_folder = './Faces_scrambled/'
 target_folder = './Target_images/'
 instruction = './Instructions/Instruction_Faces.png'
 log_folder = r'C:\Experiments\TaylorLab\OPM07 - UKRI\logs'
+
+framerate = 60 # Hz, System-dependent
 
 # Triggers
 class PortCodes(IntFlag):
@@ -72,14 +67,25 @@ class PortCodes(IntFlag):
     button = 64         # Trigger 7 for button press
     all = 255           # Send trigger to all ports
 
-
 # Screen on which video is displayed
-screen_idx=0 # Should be 0 for stim PC
+screen_idx=0 
 
-# Target proportion and settings
-init_nontargets = 3 # How many nontarget trials come at the start
+# Whether or not to use head motion tracking, set to False if you don't have Optitrack
+optitrack = False
 
-# Image sizes
+#%% General parameters
+
+# Timing parameters
+num_faces = 80 # number of face images
+num_scrambled = 80 # same number of scrambled faces
+num_targets = 30 # number of target images
+stimulus_duration = 0.5 # duration of face presentation s
+fixation_duration = 1.25 # average duration of fixation
+max_jitter = 0.2; # jitter duration in s, effective fixation duration will be between [fixation_duration - max_jitter, fixation_duration + max_jitter]
+ready_duration = 3 # duration of ready set go sequence
+end_duration = 2 # duration of the final message in s
+
+# Image width in pixels
 target_size = 506
     
 #%% Logistics
@@ -100,15 +106,15 @@ target_files = utils.create_img_list(target_folder)
 
 #%% Set up window and hardware
 
-# Create buttonbox    
-btn_box = ButtonBox(address=0xdff8)
-
 # Create a window
 win_size = utils.get_window_size(screen_idx) 
 window = utils.create_window(win_size, screen_idx)
 
 # Set up Optitrack
-client = opti.setup()
+if optitrack:
+    client = opti.setup()
+else:
+    client = None
 
 #%% Create screens
 intro_screen = visual.ImageStim(window, pos=(0,0), image=instruction, size=win_size)
@@ -159,7 +165,7 @@ for s in range(num_trials):
 
 #%% Logging
 log_df = pd.DataFrame({'trial_image': trial_list})
-log_df['trigger'] = np.log2(trigger_list) + 1
+log_df['trigger'] = trigger_list
 log_df['is_happy'] = is_happy
 log_df['is_angry'] = is_angry
 log_df['is_scrambled'] = is_scrambled
@@ -170,7 +176,7 @@ def save_data(): # This is not pretty, but it works
     now = datetime.now()
     save_folder = log_folder + '\\' + now.strftime("%Y%m%d")
     os.makedirs(save_folder, exist_ok=True)
-    log_df.to_csv(save_folder + '\\Faces_' + now.strftime("%Y-%m-%d_%H-%M-%S") + '.csv', index=False)
+    log_df.to_csv(save_folder + '\\logFaces_' + now.strftime("%Y-%m-%d_%H-%M-%S") + '.csv', index=False)
 
 #%% Wait until ready
 event.clearEvents() # Clear the keyboard events buffer to make sure previous button presses are ignored
@@ -186,8 +192,9 @@ while not ready:
         ready = True
         
 # Start Optitrack
-opti.set_take_name(client, 'Faces')
-opti.start_recording(client)
+if optitrack: 
+    opti.set_take_name(client, 'Faces')
+    opti.start_recording(client)
 
 # Present get ready screens
 ready_screen.draw()
@@ -234,17 +241,11 @@ for trial_idx in range(num_trials):
     log_df.loc[trial_idx, 'dropped_frames_fix'] = window.nDroppedFrames - drops_before
     drops_before = window.nDroppedFrames
 
-
-
-# Save log
-save_data()
-
 # Draw end screen
 end_screen.draw()
 window.flip()
 core.wait(end_duration)
 
-opti.stop_recording(client)
-
-window.close()
-core.quit()
+# Quit and save log
+utils.print_frame_timing_diagnostics(window)
+utils.quit_experiment(window,client,save_data)
