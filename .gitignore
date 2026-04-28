@@ -1,0 +1,13 @@
+Faces_original/
+Faces_scrambled/
+Target_images/
+Instructions/
+__pycache__
+*.mp4
+*.avi
+*.png
+*.PNG
+*.jpg
+*.jpeg
+*.bmp
+*.tiff
