@@ -35,12 +35,12 @@ import os
 import sys
 import pandas as pd
 from datetime import datetime
+from pathlib import Path
 
-sys.path.append(r'C:\Experiments\TaylorLab\stim_utils') # Change folder name as needed
+BASE_DIR = Path(__file__).parent
+sys.path.append(str(BASE_DIR.parent / 'stim_utils'))
 import OptitrackUtils as opti
 import ExperimentUtils as utils
-
-os.chdir(os.path.dirname(os.path.abspath(__file__))) 
 
 
 #%% System-dependent parameters - change these as needed
@@ -48,11 +48,11 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 # Do not forget to set up triggers and button box in the ExperimentUtils module
 
 # File paths
-faces_folder = "./Faces_original/"
-scrambled_folder = './Faces_scrambled/'
-target_folder = './Target_images/'
-instruction = './Instructions/Instruction_Faces.png'
-log_folder = r'C:\Experiments\TaylorLab\OPM07 - UKRI\logs'
+faces_folder = BASE_DIR / 'Faces_original' 
+scrambled_folder = BASE_DIR / 'Faces_scrambled' 
+target_folder = BASE_DIR / 'Target_images'
+instruction = BASE_DIR / 'Instructions' / 'Instruction_Faces.png'
+log_folder = BASE_DIR.parent / 'OPM07 - UKRI/logs' 
 
 framerate = 60 # Hz, System-dependent
 
@@ -146,10 +146,10 @@ window.flip()
 trial_list = face_files + scrambled_files + target_files
 np.random.shuffle(trial_list)
 
-is_target = [1 if 'bird' in img else 0 for img in trial_list]
-is_scrambled = [1 if '_scrambled' in img else 0 for img in trial_list]
-is_happy = [1 if ('_HA_' in img) and ('scrambled' not in img) else 0 for img in trial_list]
-is_angry = [1 if ('_AN_' in img) and ('scrambled' not in img) else 0 for img in trial_list]
+is_target = [1 if 'bird' in img.name else 0 for img in trial_list]
+is_scrambled = [1 if '_scrambled' in img.name else 0 for img in trial_list]
+is_happy = [1 if ('_HA_' in img.name) and ('scrambled' not in img.name) else 0 for img in trial_list]
+is_angry = [1 if ('_AN_' in img.name) and ('scrambled' not in img.name) else 0 for img in trial_list]
 
 trigger_list = np.zeros(num_trials, dtype=int)
 trigger_list[np.array(is_target).astype(bool)]    = PortCodes.target_image
@@ -164,7 +164,7 @@ for s in range(num_trials):
         stim[s].size = target_size
 
 #%% Logging
-log_df = pd.DataFrame({'trial_image': trial_list})
+log_df = pd.DataFrame({'trial_image': [img.name for img in trial_list]})
 log_df['trigger'] = trigger_list
 log_df['is_happy'] = is_happy
 log_df['is_angry'] = is_angry
@@ -174,9 +174,9 @@ log_df['trial_completed'] = False
 
 def save_data(): # This is not pretty, but it works
     now = datetime.now()
-    save_folder = log_folder + '\\' + now.strftime("%Y%m%d")
+    save_folder = log_folder / now.strftime("%Y%m%d")
     os.makedirs(save_folder, exist_ok=True)
-    log_df.to_csv(save_folder + '\\logFaces_' + now.strftime("%Y-%m-%d_%H-%M-%S") + '.csv', index=False)
+    log_df.to_csv(save_folder / ('logFaces_' + now.strftime("%Y-%m-%d_%H-%M-%S") + '.csv'), index=False)
 
 #%% Wait until ready
 event.clearEvents() # Clear the keyboard events buffer to make sure previous button presses are ignored
