@@ -143,6 +143,8 @@ intro_screen.draw()
 window.flip()
 
 #%% Meanwhile, load the stimuli and randomize their order
+print('Loading all images. This may take a few seconds.')
+
 trial_list = face_files + scrambled_files + target_files
 np.random.shuffle(trial_list)
 
