@@ -5,7 +5,7 @@ git clone https://github.com/EvaBro/faces_paradigm
 ```
 
 ### Stimuli
-The stimuli are available upon request.
+Please contact the author for access to the stimuli.
 
 ### Dependencies
 This paradigm requires [stim_utils](https://github.com/EvaBro/stim_utils). Clone it as a sibling folder:
