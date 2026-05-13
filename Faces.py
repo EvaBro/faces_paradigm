@@ -28,6 +28,22 @@ Outputs:
       If you want this functionality, make sure the Motive software is running and set up 
 """
 
+# Before all else, switch to one monitor if needed, for optimal timing
+# This must be done before importing psychopy or modules that import psychopy
+
+import ctypes
+import subprocess
+import time
+
+user32 = ctypes.windll.user32
+monitor_count = user32.GetSystemMetrics(80)  # SM_CMONITORS = 80
+
+if monitor_count == 2:
+    subprocess.run(["DisplaySwitch.exe", "/internal"], check=False)
+    time.sleep(2)  # small pause to let Windows reconfigure displays
+
+#%% Run experiment
+
 import numpy as np
 from enum import IntFlag
 from psychopy import visual, event, core
