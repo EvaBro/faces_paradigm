@@ -53,6 +53,7 @@ import pandas as pd
 from datetime import datetime
 from pathlib import Path
 import psutil
+import argparse
 
 BASE_DIR = Path(__file__).parent
 sys.path.append(str(BASE_DIR.parent / 'stim_utils'))
@@ -62,6 +63,12 @@ import ExperimentUtils as utils
 # Give psychopy high scheduling priority
 process = psutil.Process(os.getpid())
 process.nice(psutil.HIGH_PRIORITY_CLASS)
+
+# Parse subject id
+parser = argparse.ArgumentParser()
+parser.add_argument("--subject", default="")
+args = parser.parse_args()
+
 #%% System-dependent parameters - change these as needed
 
 # Do not forget to set up triggers and button box in the ExperimentUtils module
@@ -196,6 +203,8 @@ log_df['trial_completed'] = False
 def save_data(): # This is not pretty, but it works
     now = datetime.now()
     save_folder = log_folder / now.strftime("%Y%m%d")
+    if args.subject:
+        save_folder = save_folder / args.subject
     os.makedirs(save_folder, exist_ok=True)
     log_df.to_csv(save_folder / ('logFaces_' + now.strftime("%Y-%m-%d_%H-%M-%S") + '.csv'), index=False)
 
