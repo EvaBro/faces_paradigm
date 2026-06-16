@@ -111,8 +111,7 @@ max_jitter = 0.2; # jitter duration in s, effective fixation duration will be be
 ready_duration = 3 # duration of ready set go sequence
 end_duration = 2 # duration of the final message in s
 
-# Image width in pixels
-target_size = 506
+load_size = 0.94 # Scaling of images to match previous paradigms
     
 #%% Logistics
 
@@ -187,9 +186,17 @@ trigger_list[np.array(is_angry).astype(bool)]     = PortCodes.angry_face
 
 # Create stim objects
 stim = [visual.ImageStim(window, pos=(0,0), image=i) for i in trial_list]
+
+# Scale face and scrambled face images
+for s in range(num_trials):
+    if not is_target[s]:
+        stim[s].size *= (load_size,load_size)
+        final_size = stim[s].size
+
+# Make sure the widths of the target images match that of the faces/scrambled faces
 for s in range(num_trials):
     if is_target[s]:
-        stim[s].size = target_size
+        stim[s].size = final_size[0]
 
 #%% Logging
 log_df = pd.DataFrame({'trial_image': [img.name for img in trial_list]})
