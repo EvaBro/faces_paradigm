@@ -112,10 +112,10 @@ ready_duration = 3 # duration of ready set go sequence
 end_duration = 2 # duration of the final message in s
 
 # Image sizes in degree of visual angle
-face_width = 8.2
-face_height = 10.5
-target_width = 8.2
-target_height = 8.2
+face_width = 8.218
+face_height = 10.441
+target_width = 8.218
+target_height = 8.218
 
 #%% Logistics
 
