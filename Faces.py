@@ -111,8 +111,12 @@ max_jitter = 0.2; # jitter duration in s, effective fixation duration will be be
 ready_duration = 3 # duration of ready set go sequence
 end_duration = 2 # duration of the final message in s
 
-load_size = 0.94 # Scaling of images to match previous paradigms
-    
+# Image sizes in degree of visual angle
+face_width = 8.2
+face_height = 10.5
+target_width = 8.2
+target_height = 8.2
+
 #%% Logistics
 
 # Apply jitter to isi interval
@@ -139,27 +143,27 @@ else:
 
 # Create a window
 win_size = utils.get_window_size(screen_idx) 
-window = utils.create_window(win_size, screen_idx)
+window = utils.create_window(win_size, screen_idx, units='deg')
 
 #%% Create screens
-intro_screen = visual.ImageStim(window, pos=(0,0), image=instruction, size=win_size)
+intro_screen = visual.ImageStim(window, pos=(0,0), image=instruction, size=(2,2), units='norm')
 
 ready_screen = visual.TextStim(win=window, text="Ready", color='white',
-                               height=70, alignText='center', anchorHoriz='center',
+                               height=1.2, alignText='center', anchorHoriz='center',
                                anchorVert='center')
 
 set_screen = visual.TextStim(win=window, text="Set", color='white',
-                               height=70, alignText='center', anchorHoriz='center',
+                               height=1.2, alignText='center', anchorHoriz='center',
                                anchorVert='center')
 
 go_screen = visual.TextStim(win=window, text="Go!", color='white',
-                               height=70, alignText='center', anchorHoriz='center',
+                               height=1.2, alignText='center', anchorHoriz='center',
                                anchorVert='center')
 
 fixation = utils.create_fixation_screen(window)
 
 end_screen = visual.TextStim(win=window, text="The end.\nThank you for playing!", color='white',
-                               height=70, alignText='center', anchorHoriz='center',
+                               height=1.2, alignText='center', anchorHoriz='center',
                                anchorVert='center')
 
 
@@ -185,18 +189,9 @@ trigger_list[np.array(is_happy).astype(bool)]     = PortCodes.happy_face
 trigger_list[np.array(is_angry).astype(bool)]     = PortCodes.angry_face
 
 # Create stim objects
-stim = [visual.ImageStim(window, pos=(0,0), image=i) for i in trial_list]
-
-# Scale face and scrambled face images
-for s in range(num_trials):
-    if not is_target[s]:
-        stim[s].size *= (load_size,load_size)
-        final_size = stim[s].size
-
-# Make sure the widths of the target images match that of the faces/scrambled faces
-for s in range(num_trials):
-    if is_target[s]:
-        stim[s].size = final_size[0]
+stim = [visual.ImageStim(window, pos=(0,0), image=img, size=(face_width,face_height)) if not is_target[idx]
+        else visual.ImageStim(window, pos=(0,0), image=img, size=(target_width,target_height))
+        for (idx, img) in enumerate(trial_list)]
 
 #%% Logging
 log_df = pd.DataFrame({'trial_image': [img.name for img in trial_list]})
